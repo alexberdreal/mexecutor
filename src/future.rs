@@ -3,11 +3,13 @@ use std::io::Read;
 use std::net::{TcpListener, TcpStream};
 use futures::FutureExt;
 
+// A future that can accept new connections and poll readers
 pub struct ServerFuture {
     listener: TcpListener,
     readers : Vec<SocketReaderFuture>
 }
 
+// A future that can read messages from a single tcp stream
 pub struct SocketReaderFuture {
     stream : TcpStream,
     buffer : Vec<u8>
@@ -24,10 +26,9 @@ impl Future for SocketReaderFuture {
 
     fn poll(self: Pin<&mut Self>, _ : &mut Context<'_>) -> Poll<Self::Output> {
         let mut_self = self.get_mut();
-        let mut cur_len = 0;
         loop {
             let mut temp_buf : [u8; 1024] = [0; 1024];
-            match mut_self.stream.read(&mut temp_buf) {
+            match mut_self.stream.re ad(&mut temp_buf) {
                 Ok(0) => {
                     let buf_clone = mut_self.buffer.clone();
                     mut_self.buffer.clear();
@@ -35,7 +36,6 @@ impl Future for SocketReaderFuture {
                 }
                 Ok(n) => {
                     mut_self.buffer.extend_from_slice(&temp_buf);
-                    cur_len += n;
                 }
                 Err(_) => {
                     // TODO: error handling
