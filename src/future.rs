@@ -1,7 +1,6 @@
 use std::{future::Future, io, pin::Pin, task::{Context, Poll}};
 use std::io::Read;
 use std::net::{TcpListener, TcpStream};
-use std::str::from_utf8;
 use futures::FutureExt;
 
 pub struct ServerFuture {
@@ -25,7 +24,7 @@ impl Future for SocketReaderFuture {
 
     fn poll(self: Pin<&mut Self>, _ : &mut Context<'_>) -> Poll<Self::Output> {
         let mut_self = self.get_mut();
-        let mut cur_len = mut_self.buffer.len();
+        let mut cur_len = 0;
         loop {
             let mut temp_buf : [u8; 1024] = [0; 1024];
             match mut_self.stream.read(&mut temp_buf) {
@@ -38,7 +37,7 @@ impl Future for SocketReaderFuture {
                     mut_self.buffer.extend_from_slice(&temp_buf);
                     cur_len += n;
                 }
-                Err(ref err) => {
+                Err(_) => {
                     // TODO: error handling
                     return Poll::Pending
                 }
